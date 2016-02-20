@@ -89,10 +89,20 @@
 							<section id="four" class="wrapper alt style1">
 								<div class="inner">
 								  <h2 class="major">Requirements</h2>
-								  <ul>
-                                                                    <li>System shall be able to recreate pictures and write out text via a provided drawing utensil</li>
-                                                                    <li></li>
-                                                                    <li></li>
+								  <h3> Functional Requirement: </h3>
+								  	<ul>                          
+                                        <li>System shall be able to recreate pictures and write out text via a provided drawing utensil</li>
+                                        <li>System shall be able to detect drawing surface and size, so as to produce an accurate reproduction given the space provided</li>
+                                        <li>System shall be able to receive feedback via camera/light and act on it</li>
+                                        <li>System should be able to analyze and respond to human input, such as playing the game Tic-Tac-Toe</li>
+                                        <li>System should have a mobile or web application that allows transfer or upload of drawing date and notify user of system status</li>
+                                    </ul>
+                                <h3> Non - Functional Characteristics: </h3>
+                                	<ul>
+                                        <li>Reliability Requirement: System should be able to communicate wirelessly between motors and microcontroller</li>
+                                        <li>Portability Requirement: System should be able to be placed down on any size surface and begin drawing
+                                    </ul>
+                                                                    
 								</div>
 							</section>
 
@@ -105,22 +115,28 @@
 							      <article>
 								<a class="image"><img src="images/steppermotor.jpg" alt="" /></a>
 								<h3 class="major">Stepper Motors</h3>
-								<p>We will need four of these, each responsible for pulling a wire towards itself, wrapping it onto a small axle</p>
+								<p>We will need four of these, each responsible for pulling a wire towards itself, wrapping it onto a small axle.  Estimated cost is 15$ per motor which comes out to 60$ total.  We will acquire the part from 
+								<a href = "http://www.sparkfun.com"> Spark fun </a>.
+							    </p>
+
 							      </article>
 							      <article>
-								<a class="image"><img src="images/pic04.jpg" alt="" /></a>
-								<h3 class="major">Sed feugiat lorem</h3>
-								<p>Lorem ipsum dolor sit amet, consectetur adipiscing vehicula id nulla dignissim dapibus ultrices.</p>
+								<a class="image"><img src="images/steppermotordriver.jpg" alt="" /></a>
+								<h3 class="major">Stepper Motor Drivers</h3>
+								<p>These will allow us to interface with the stepper motors and send specific commands to each stepper motor so that they will be able to pull the wire in the exact way to create the desired drawing.  Estimated Cost is 15$ per driver which comes out to 60$ total.  We will acquire the part from 
+								<a href = "http://www.sparkfun.com"> Spark fun </a>.</p>
 							      </article>
 							      <article>
-								<a class="image"><img src="images/pic04.jpg" alt="" /></a>
-								<h3 class="major">Sed feugiat lorem</h3>
-								<p>Lorem ipsum dolor sit amet, consectetur adipiscing vehicula id nulla dignissim dapibus ultrices.</p>
+								<a class="image"><img src="images/cmoscamera.jpg" alt="" /></a>
+								<h3 class="major">CMOS Camera</h3>
+								<p>Camera will be attached to harness and will collect visual feedback to be allow for real time updates.  Will be used for a variety of features such as playing tic tac toe with a human opponent or be able to detect the size of the drawing surface and update in real time. Estimated cost is 32$.  We will acquire the part from 
+								<a href = "http://www.sparkfun.com"> Spark fun </a>.</p>
 							      </article>
 							      <article>
-								<a class="image"><img src="images/pic04.jpg" alt="" /></a>
-								<h3 class="major">Sed feugiat lorem</h3>
-								<p>Lorem ipsum dolor sit amet, consectetur adipiscing vehicula id nulla dignissim dapibus ultrices.</p>
+								<a class="image"><img src="images/raspberrypi2.jpeg" alt="" /></a>
+								<h3 class="major">Raspberrypi 2</h3>
+								<p>Raspberry pi will be used as our processing platform.  Will be orchestrating the control of converting the desired image into pen movements and the different commands for each stepper motor. Estimated cost is 30$.  We will acquire the part from 
+								<a href = "http://www.sparkfun.com"> Spark fun </a>.</p>
 							      </article>
 							    </section>
                                                             
