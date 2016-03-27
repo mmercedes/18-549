@@ -65,6 +65,7 @@ def parseSegment(segment, width, height):
         scale = DRAWING_WIDTH/width
     else:
         scale = DRAWING_HEIGHT/height
+    print "Scale = %d" %(scale) 
     if isinstance(segment, Line):
         (start, end) = (segment.start, segment.end)
         (sx, sy) = (start.real*scale, start.imag*scale)
