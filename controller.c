@@ -4,17 +4,41 @@
 // M_2 D is 25 S is 26
 // M_3 D is 6 S is 7
 // M_4 D is 23 S is 24
-#include
-AccelStepper stepper_1(1,5,4);//initialise accelstepper for a two wire board, pin 5 step, pin 4 dir
-AccelStepper stepper_2(1,25,26);//initialise accelstepper for a two wire board, pin 26 step, pin 25 dir
-AccelStepper stepper_3(1,6,7);//initialise accelstepper for a two wire board, pin 7 step, pin 6 dir
-AccelStepper stepper_4(1,23,24);//initialise accelstepper for a two wire board, pin 23 step, pin 23 dir
-int currentpos_1;currentpos_2;currentpos_3;currentpos_4;
+#include <Arduino.h>
+#include <AccelStepper.h>
+
+const int M1_STEP = 1;
+const int M2_STEP = 26;
+const int M3_STEP = 7;
+const int M4_STEP = 23;
+
+const int M1_DIR = 4;
+const int M2_DIR = 25;
+const int M3_DIR = 6;
+const int M4_DIR = 23;
+
+const int ENABLE_PIN = 1;
+const int BAUD_RATE = 9600;
+
+const int DELAY = 1000;
+const int STEPS = 1000;
+const int SPEED = 200;
+const int ACCEL = 100;
+
+AccelStepper stepper_1(1,M1_STEP, M1_DIR); //initialise accelstepper for a two wire board, pin 5 step, pin 4 dir
+AccelStepper stepper_2(1,M2_STEP, M2_DIR); //initialise accelstepper for a two wire board, pin 26 step, pin 25 dir
+AccelStepper stepper_3(1,M3_STEP, M3_DIR); //initialise accelstepper for a two wire board, pin 7 step, pin 6 dir
+AccelStepper stepper_4(1,M4_STEP, M4_DIR); //initialise accelstepper for a two wire board, pin 23 step, pin 23 dir
+
+int currentpos_1;
+int currentpos_2;
+int currentpos_3;
+int currentpos_4;
 
 void setup() {
-  Serial.begin(9600);
-  pinMode(6,OUTPUT); // Enable
-  digitalWrite(6,LOW); // Set Enable low
+  Serial.begin(BAUD_RATE);
+  pinMode(ENABLE_PIN, OUTPUT); // Enable
+  digitalWrite(ENABLE_PIN, LOW); // Set Enable low
 }
 
 void draw(int[][] commands){
@@ -27,61 +51,57 @@ void draw(int[][] commands){
 }
 
 void moveMotor1(int x) {
-  digitalWrite(6,LOW); // Set Enable low
-  if (stepper_1.distanceToGo() == 0)
-  {  // Random change to speed, position and acceleration
-    // Make sure we dont get 0 speed or accelerations
-    delay(1000);
-    stepper_1.moveTo(x % 400);
-    stepper_1.setMaxSpeed((rand() % 400) + 200);
-    stepper_1.setAcceleration((rand() % 200) + 100);
-  }
-
-Serial.println(stepper_1.distanceToGo());
-stepper_1.run();  // Actually makes stepper move
+    // digitalWrite(ENABLE_PIN,LOW); // Set Enable low
+    if (stepper_1.distanceToGo() == 0)
+        {
+            delay(DELAY);
+            stepper_1.moveTo(x % STEPS);
+            stepper_1.setMaxSpeed(SPEED);
+            stepper_1.setAcceleration(ACCEL);
+        }
+    while(stepper_1.run()){
+        Serial.println(stepper_1.distanceToGo());
+    }
 }
 
 void moveMotor2(int x) {
-  digitalWrite(6,LOW); // Set Enable low
-  if (stepper_2.distanceToGo() == 0)
-  {  // Random change to speed, position and acceleration
-    // Make sure we dont get 0 speed or accelerations
-    delay(1000);
-    stepper_2.moveTo(x % 400);
-    stepper_2.setMaxSpeed((rand() % 400) + 200);
-    stepper_2.setAcceleration((rand() % 200) + 100);
-  }
-
-Serial.println(stepper_2.distanceToGo());
-stepper_2.run();  // Actually makes stepper move
+    // digitalWrite(ENABLE_PIN,LOW); // Set Enable low    
+    if (stepper_2.distanceToGo() == 0)
+        { 
+            delay(DELAY);
+            stepper_2.moveTo(x % STEPS);
+            stepper_2.setMaxSpeed(SPEED);
+            stepper_2.setAcceleration(ACCEL);
+        }
+    while(stepper_2.run()){
+        Serial.println(stepper_2.distanceToGo());
+    }
 }
 
 void moveMotor3(int x) {
-  digitalWrite(6,LOW); // Set Enable low
-  if (stepper_3.distanceToGo() == 0)
-  {  // Random change to speed, position and acceleration
-    // Make sure we dont get 0 speed or accelerations
-    delay(1000);
-    stepper_3.moveTo(x % 400);
-    stepper_3.setMaxSpeed((rand() % 400) + 200);
-    stepper_3.setAcceleration((rand() % 200) + 100);
-  }
-
-Serial.println(stepper_3.distanceToGo());
-stepper_3.run();  // Actually makes stepper move
+    // digitalWrite(ENABLE_PIN,LOW); // Set Enable low        
+    if (stepper_3.distanceToGo() == 0)
+      { 
+          delay(DELAY);
+          stepper_3.moveTo(x % STEPS);
+          stepper_3.setMaxSpeed(SPEED);
+          stepper_3.setAcceleration(ACCEL);
+      }
+    while(stepper_3.run()){
+        Serial.println(stepper_3.distanceToGo());
+    }
 }
 
 void moveMotor4(int x) {
-  digitalWrite(6,LOW); // Set Enable low
-  if (stepper_4.distanceToGo() == 0)
-  {  // Random change to speed, position and acceleration
-    // Make sure we dont get 0 speed or accelerations
-    delay(1000);
-    stepper_4.moveTo(x % 400);
-    stepper_4.setMaxSpeed((rand() % 400) + 200);
-    stepper_4.setAcceleration((rand() % 200) + 100);
-  }
-
-Serial.println(stepper_4.distanceToGo());
-stepper_4.run();  // Actually makes stepper move
+    // digitalWrite(ENABLE_PIN,LOW); // Set Enable low            
+    if (stepper_4.distanceToGo() == 0)
+        {
+            delay(DELAY);
+            stepper_4.moveTo(x % STEPS);
+            stepper_4.setMaxSpeed(SPEED);
+            stepper_4.setAcceleration(ACCEL);
+        }
+    while(stepper_4.run()){
+        Serial.println(stepper_4.distanceToGo());
+    }
 }
