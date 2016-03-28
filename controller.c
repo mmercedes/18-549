@@ -43,10 +43,16 @@ void setup() {
 
 void draw(int[][] commands){
   for(i = 0; i < sizeof(commands)/ sizeof(int); i++){
-    moveMotor1(commands[i][0]);
-    moveMotor2(commands[i][1]);
-    moveMotor2(commands[i][2]);
-    moveMotor2(commands[i][3]);
+      int x1 = commands[i][0];
+      int x2 = commands[i][1];
+      int x3 = commands[i][2];
+      int x4 = commands[i][3];      
+
+      boolean stepsLeft = true;
+      while(stepsLeft) {
+          stepsLeft = moveMotor1(x1) || moveMotor(x2) || moveMotor(x3) || moveMotor(x4);
+          delay(DELAY);
+      }
   }
 }
 
@@ -54,54 +60,46 @@ void moveMotor1(int x) {
     // digitalWrite(ENABLE_PIN,LOW); // Set Enable low
     if (stepper_1.distanceToGo() == 0)
         {
-            delay(DELAY);
             stepper_1.moveTo(x % STEPS);
             stepper_1.setMaxSpeed(SPEED);
             stepper_1.setAcceleration(ACCEL);
         }
-    while(stepper_1.run()){
-        Serial.println(stepper_1.distanceToGo());
-    }
+    Serial.println(stepper_1.distanceToGo());
+    return stepper_1.run();
 }
 
 void moveMotor2(int x) {
     // digitalWrite(ENABLE_PIN,LOW); // Set Enable low    
     if (stepper_2.distanceToGo() == 0)
         { 
-            delay(DELAY);
             stepper_2.moveTo(x % STEPS);
             stepper_2.setMaxSpeed(SPEED);
             stepper_2.setAcceleration(ACCEL);
         }
-    while(stepper_2.run()){
-        Serial.println(stepper_2.distanceToGo());
-    }
+    Serial.println(stepper_2.distanceToGo());
+    return stepper_2.run();    
 }
 
 void moveMotor3(int x) {
     // digitalWrite(ENABLE_PIN,LOW); // Set Enable low        
     if (stepper_3.distanceToGo() == 0)
       { 
-          delay(DELAY);
           stepper_3.moveTo(x % STEPS);
           stepper_3.setMaxSpeed(SPEED);
           stepper_3.setAcceleration(ACCEL);
       }
-    while(stepper_3.run()){
-        Serial.println(stepper_3.distanceToGo());
-    }
+    Serial.println(stepper_3.distanceToGo());
+    return stepper_3.run();
 }
 
 void moveMotor4(int x) {
     // digitalWrite(ENABLE_PIN,LOW); // Set Enable low            
     if (stepper_4.distanceToGo() == 0)
         {
-            delay(DELAY);
             stepper_4.moveTo(x % STEPS);
             stepper_4.setMaxSpeed(SPEED);
             stepper_4.setAcceleration(ACCEL);
         }
-    while(stepper_4.run()){
-        Serial.println(stepper_4.distanceToGo());
-    }
+    Serial.println(stepper_4.distanceToGo());
+    return stepper_4.run();
 }
