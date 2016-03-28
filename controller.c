@@ -4,6 +4,8 @@
 // M_2 D is 25 S is 26
 // M_3 D is 6 S is 7
 // M_4 D is 23 S is 24
+
+//https://github.com/sudar/Arduino-Makefile
 #include <Arduino.h>
 #include <AccelStepper.h>
 
@@ -22,8 +24,8 @@ const int BAUD_RATE = 9600;
 
 const int DELAY = 1000;
 const int STEPS = 1000;
-const int SPEED = 200;
-const int ACCEL = 100;
+const int SPEED = 20;
+const int ACCEL = 10;
 
 AccelStepper stepper_1(1,M1_STEP, M1_DIR); //initialise accelstepper for a two wire board, pin 5 step, pin 4 dir
 AccelStepper stepper_2(1,M2_STEP, M2_DIR); //initialise accelstepper for a two wire board, pin 26 step, pin 25 dir
