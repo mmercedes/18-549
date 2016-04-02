@@ -33,6 +33,65 @@
 
 				<!-- Wrapper -->
 					<section id="wrapper">
+						<!-- Architecture -->
+					<section id="one" class="wrapper style1">
+								<div class="inner">
+									<div class="content">
+										<h2 class="major">Architecture</h2>
+										<p></p>
+									        <section class="features">
+										  <article>
+											<a class="image"><img src="images/progress/image1.jpg" alt="" /></a>
+											<h3 class="major">PCB</h3>
+											<p>We designed our PCB to sit in the middle chasis that will be doing the drawing.  Mounted on the PCB will be the 4 stepper motor controllers and those will be connected to the stepper motors via wires.  The PCB will use I2C Protocol to communicate with the Raspberry pi.  The PCB will be sent a number of commands for the stepper motors from the Pi and it will then send those commands to the stepper motor drivers.
+											</p>
+										      </article>
+										     <article>
+											<a class="image"><img src="images/progress/img_5437.jpg" alt="" /></a>
+											<h3 class="major">Stepper Motor Mounts</h3>
+											<p>The Stepper motor drivers will be connected to the Stepper motors via wire.  The Stepper Motors will be mounted at the corners of the surface.  We have 3D printed the mounts and allow the stepper motors to easily swivile around and change the direction they are facing if needed.
+											</p>
+										      </article>
+										    <article>
+											<a class="image"><img src="images/progress/img_5438.jpg" alt="" /></a>
+											<h3 class="major">Raspberry Pi 2</h3>
+											<p>The Raspberry pi will do the parsing of images into a list of points and then convert those points into commands for the stepper motors.  The Raspberry pi will send the commands to the PCB using the I2C protocol.  It will also be mounted on the chassis and the pcb will be mounted on top of the raspberry pi.
+											</p>
+										      </article>
+										    <article>
+											<video width="320" height="240" controls>
+  												<source src="images/progress/drawing_video.mp4" type="video/mp4">
+  												Your browser does not support the video tag.
+											</video>
+											<h3 class="major">Demo of Parsing script result</h3>
+											<p>The video shows the result of the parsing script applied to an SVG file.  In addition another script is run to convert curves into a list of points.  Once all the points are gathered it is then drawn.  This is just a demo using Turtle in Python.
+											</p>
+										      </article>
+										</section>               
+									</div>
+								</div>
+							</section>
+
+
+			<!-- Use Case -->
+					<section id="two" class="wrapper style3">
+								<div class="inner">
+									<div class="content">
+										<h2 class="major">Use Case</h2>
+										<p></p>
+									        <section class="features">
+										  <article>
+											<a class="image"><img src="images/architectureDiagram.png" alt="" /></a>
+											<h3 class="major">Figure 1</h3>
+											<p>As detailed in Figure 1, a user interacts with the system by sending a file to a processing platform. The platform will then convert the file to a format understood by the motor controllers to draw. The motor controllers will command the motors to draw on the drawing medium (paper, whiteboard, chalk, etc.). When the motors are done drawing, the processing platform will notify the user it’s done and the user can now get their drawing, a perfectly drawn smiley face.
+											</p>
+										      </article>
+										</section>               
+									</div>
+								</div>
+							</section>
+                                                
+
 
                                                 <!-- Tech Specs -->
                                                         <section id="one" class="wrapper style1">
