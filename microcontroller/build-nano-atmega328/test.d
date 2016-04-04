@@ -11,4 +11,5 @@ build-nano-atmega328/test.o: test.ino \
  /Applications/Arduino.app/Contents/Java/hardware/arduino/avr/cores/arduino/Arduino.h \
  /Applications/Arduino.app/Contents/Java/hardware/arduino/avr/variants/eightanaloginputs/pins_arduino.h \
  /Applications/Arduino.app/Contents/Java/hardware/arduino/avr/variants/eightanaloginputs/../standard/pins_arduino.h \
- libraries/AccelStepper/AccelStepper.h
+ /Applications/Arduino.app/Contents/Java/hardware/arduino/avr/libraries/Wire/Wire.h \
+ /Applications/Arduino.app/Contents/Java/hardware/arduino/avr/cores/arduino/Stream.h
