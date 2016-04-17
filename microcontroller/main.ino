@@ -5,7 +5,7 @@
   * Team 21 - GhostWriter
   * Last Modified: 4/17/2016
   *
-  * This file contains the code to be uploaded on the PCB
+  * This file contains the code to be uploaded on the Atmega328p on the PCB
   *
   *
   */
