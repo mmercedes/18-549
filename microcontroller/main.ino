@@ -17,13 +17,14 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <Servo.h>
+#include <AccelStepper.h>
 
 /*****************************************
  *                 DEFINES               *
  *****************************************/
 
 #define BAUD_RATE           115200
-#define I2C_ADDRESS              1
+#define I2C_ADDRESS           0x04
 
 #define PIN_MOTOR1_STEP          3
 #define PIN_MOTOR1_DIR           2
@@ -40,6 +41,17 @@
 #define MAXSPEED               500
 #define SPEED                  200
 #define ACCEL                   50
+
+// I2C COMMANDS
+#define STOP                     0
+#define PEN_UP                   1
+#define PEN_DOWN                 2
+#define CALIBRATE                3
+#define DRAW                     4
+
+#define CALIBRATE_STEPS         10
+
+#define START_POS              500
 
 /*****************************************
  *                 TYPEDEFS              *
@@ -58,6 +70,8 @@ typedef struct
   states_E presentState;
   bool stateTransition;
   bool i2cReceived;
+  bool inCommand;
+  int nextCommand;
 } data_S;
 
 /*****************************************
@@ -105,12 +119,10 @@ AccelStepper stepper_2(1,PIN_MOTOR2_STEP, PIN_MOTOR2_DIR);
 AccelStepper stepper_3(1,PIN_MOTOR3_STEP, PIN_MOTOR3_DIR);
 AccelStepper stepper_4(1,PIN_MOTOR4_STEP, PIN_MOTOR4_DIR);
 
-int currentpos_1;
-int currentpos_2;
-int currentpos_3;
-int currentpos_4;
-
-int i2cmsg [4];
+int desiredpos_1;
+int desiredpos_2;
+int desiredpos_3;
+int desiredpos_4;
 
 /*****************************************
  *          HELPER FUNCTIONS             *
@@ -119,18 +131,36 @@ int i2cmsg [4];
 /**
   * I2C handler called when a message is received
   */
-void i2c_handler(int numBytesReceived)
+void i2c_rec_handler(int numBytesReceived)
 {
+    int buf [9];
     int i = 0;
-
+    
     while(Wire.available()) {
-        i2cmsg[i] = Wire.read();
-        Serial.print("I2C received : ");
-        Serial.println(i2cmsg[i], DEC);
+        buf[i] = Wire.read();
         i++;
     }
-
+    desiredpos_1 = buf[0] * 256 + buf[1];
+    desiredpos_2 = buf[2] * 256 + buf[3];
+    desiredpos_3 = buf[4] * 256 + buf[5];
+    desiredpos_4 = buf[6] * 256 + buf[7];
+    data.nextCommand = buf[8];
+    Serial.print("I2C received : ");
+    Serial.print(desiredpos_1);
+    Serial.print("\t");    
+    Serial.print(desiredpos_2);
+    Serial.print("\t");
+    Serial.print(desiredpos_3);
+    Serial.print("\t");
+    Serial.print(desiredpos_4);
+    Serial.print("\t");
+    Serial.print(buf[8]);
     data.i2cReceived = true;
+}
+
+void i2c_req_handler()
+{
+    Wire.write(data.inCommand);
 }
 
 /**
@@ -138,9 +168,7 @@ void i2c_handler(int numBytesReceived)
   */
 inline bool allowTransitionCalibrateToDrawing(void)
 {
-  bool allowTransition = false;
-
-  return allowTransition;
+  return !data.inCommand && data.nextCommand == DRAW;
 }
 
 /**
@@ -148,37 +176,27 @@ inline bool allowTransitionCalibrateToDrawing(void)
   */
 inline bool allowTransitionDrawingToCalibrate(void)
 {
-  bool allowTransition = false;
-
-  return allowTransition;
+  return !data.inCommand && data.nextCommand == CALIBRATE;
 }
 
 inline bool allowTransitionWaitToCalibrate(void)
 {
-  bool allowTransition = false;
-
-  return allowTransition;
+  return !data.inCommand && data.nextCommand == CALIBRATE;
 }
 
 inline bool allowTransitionWaitToDrawing(void)
 {
-  bool allowTransition = false;
-
-  return allowTransition;
+    return !data.inCommand && data.nextCommand == DRAW; 
 }
 
 inline bool allowTransitionDrawingToWait(void)
 {
-  bool allowTransition = false;
-
-  return allowTransition;
+  return data.nextCommand == STOP;
 }
 
 inline bool allowTransitionCalibrateToWait(void)
 {
-  bool allowTransition = false;
-
-  return allowTransition;
+  return data.nextCommand == STOP;
 }
 
 /*
@@ -188,6 +206,7 @@ void processData(void)
 {
     if(data.i2cReceived) {
         data.i2cReceived = false;
+        data.inCommand = true;        
     }
 }
 
@@ -198,7 +217,7 @@ void processData(void)
 void getDesiredState(void)
 {
   states_E desiredState = data.desiredState;
-v
+
   switch(desiredState)
   {
     case STATE_WAIT:
@@ -239,7 +258,7 @@ v
       }
       else if(allowTransitionDrawingToWait() == true)
       {
-        desiredState = STATE_WAIT;
+          desiredState = STATE_WAIT;
       }
       else
       {
@@ -267,25 +286,28 @@ void setCurrentState(void)
       case STATE_WAIT:
         if(data.stateTransition)
         {
-
+            data.presentState = STATE_WAIT;
+            Serial.println("WAIT");
         }
-
+        data.inCommand = false;
         break;
 
       case STATE_CALIBRATE:
         if(data.stateTransition)
         {
-
+            data.presentState = STATE_CALIBRATE;
+            Serial.println("CALIBRATE");
         }
-
+        data.inCommand = false;
         break;
 
       case STATE_DRAWING:
         if(data.stateTransition)
         {
-
+            data.presentState = STATE_DRAWING;
+            Serial.println("DRAW");
         }
-
+        data.inCommand = false;
         break;
 
       default:
@@ -338,11 +360,11 @@ boolean moveMotor4(int x) {
 }
 
 void movePenUp() {
-
+    Serial.println("PEN UP");
 }
 
 void movePenDown() {
-
+    Serial.println("PEN DOWN");
 }
 
 /*****************************************
@@ -355,29 +377,34 @@ void setup(void)
   Serial.println("-> Starting GhostWriter");
 
   // Setup i2c communication
-  data.i2cRecieved = false;
+  data.i2cReceived = false;
   Wire.begin(I2C_ADDRESS);
-  Wire.onReceive(i2c_handler);
-
+  Wire.onReceive(i2c_rec_handler);
+  Wire.onRequest(i2c_req_handler);
   /*
    * SETUP MOTOR DIRECTION AND STEP PINS AS OUTPUTS
    */
-  stepper_1.setMaxSpeed(MAXSPEED);
+  stepper_1.setCurrentPosition(START_POS);
   stepper_1.setSpeed(SPEED);  
-  stepper_2.setMaxSpeed(MAXSPEED);
+  
+  stepper_2.setCurrentPosition(START_POS);    
   stepper_2.setSpeed(SPEED);
-  stepper_3.setMaxSpeed(MAXSPEED);
+
+  stepper_3.setCurrentPosition(START_POS);    
   stepper_3.setSpeed(SPEED);
-  stepper_4.setMaxSpeed(MAXSPEED);
+
+  stepper_4.setCurrentPosition(START_POS);
   stepper_4.setSpeed(SPEED);
   
   pinMode(PIN_SERVO,       OUTPUT);
 
+  data.nextCommand = STOP;
+  data.presentState = STATE_WAIT;
+  data.desiredState = STATE_WAIT;
 }
 
 void loop(void)
 {
-
   processData();
 
   getDesiredState();
