@@ -14,7 +14,9 @@
  *                 INCLUDES              *
  *****************************************/
 
- #include <Servo.h>
+#include <Arduino.h>
+#include <Wire.h>
+#include <Servo.h>
 
 /*****************************************
  *                 DEFINES               *
@@ -33,6 +35,12 @@
 #define PIN_MOTOR4_DIR          A0
 #define PIN_SERVO                7
 
+#define DELAY                    5
+#define STEPS                 1000
+#define MAXSPEED               500
+#define SPEED                  200
+#define ACCEL                   50
+
 /*****************************************
  *                 TYPEDEFS              *
  *****************************************/
@@ -49,7 +57,7 @@ typedef struct
   states_E desiredState;
   states_E presentState;
   bool stateTransition;
-
+  bool i2cReceived;
 } data_S;
 
 /*****************************************
@@ -77,12 +85,32 @@ inline bool allowTransitionDrawingToWait(void);
 inline bool allowTransitionWaitToDrawing(void);
 inline bool allowTransitionWaitToCalibrate(void);
 
+// Motor movement functions
+boolean moveMotor1(int x);
+boolean moveMotor2(int x);
+boolean moveMotor3(int x);
+boolean moveMotor4(int x);
+
+void movePenUp();
+void movePenDown();
 
 /*****************************************
  *              VARIABLES                *
  *****************************************/
 
 data_S data;
+
+AccelStepper stepper_1(1,PIN_MOTOR1_STEP, PIN_MOTOR1_DIR);
+AccelStepper stepper_2(1,PIN_MOTOR2_STEP, PIN_MOTOR2_DIR);
+AccelStepper stepper_3(1,PIN_MOTOR3_STEP, PIN_MOTOR3_DIR);
+AccelStepper stepper_4(1,PIN_MOTOR4_STEP, PIN_MOTOR4_DIR);
+
+int currentpos_1;
+int currentpos_2;
+int currentpos_3;
+int currentpos_4;
+
+int i2cmsg [4];
 
 /*****************************************
  *          HELPER FUNCTIONS             *
@@ -93,7 +121,16 @@ data_S data;
   */
 void i2c_handler(int numBytesReceived)
 {
+    int i = 0;
 
+    while(Wire.available()) {
+        i2cmsg[i] = Wire.read();
+        Serial.print("I2C received : ");
+        Serial.println(i2cmsg[i], DEC);
+        i++;
+    }
+
+    data.i2cReceived = true;
 }
 
 /**
@@ -149,7 +186,9 @@ inline bool allowTransitionCalibrateToWait(void)
  */
 void processData(void)
 {
-
+    if(data.i2cReceived) {
+        data.i2cReceived = false;
+    }
 }
 
 /*
@@ -159,7 +198,7 @@ void processData(void)
 void getDesiredState(void)
 {
   states_E desiredState = data.desiredState;
-
+v
   switch(desiredState)
   {
     case STATE_WAIT:
@@ -257,6 +296,55 @@ void setCurrentState(void)
     data.presentState = state;
 }
 
+
+boolean moveMotor1(int x) {
+    if (stepper_1.distanceToGo() == 0)
+      { 
+          stepper_1.moveTo(x % STEPS);
+          stepper_1.setMaxSpeed(MAXSPEED);
+          stepper_1.setAcceleration(ACCEL);
+      }
+    return stepper_1.run();
+}
+
+boolean moveMotor2(int x) {
+    if (stepper_2.distanceToGo() == 0)
+      { 
+          stepper_2.moveTo(x % STEPS);
+          stepper_2.setMaxSpeed(MAXSPEED);
+          stepper_2.setAcceleration(ACCEL);
+      }
+    return stepper_2.run();
+}
+
+boolean moveMotor3(int x) {
+    if (stepper_3.distanceToGo() == 0)
+      { 
+          stepper_3.moveTo(x % STEPS);
+          stepper_3.setMaxSpeed(MAXSPEED);
+          stepper_3.setAcceleration(ACCEL);
+      }
+    return stepper_3.run();
+}
+
+boolean moveMotor4(int x) {
+    if (stepper_4.distanceToGo() == 0)
+      { 
+          stepper_4.moveTo(x % STEPS);
+          stepper_4.setMaxSpeed(MAXSPEED);
+          stepper_4.setAcceleration(ACCEL);
+      }
+    return stepper_4.run();
+}
+
+void movePenUp() {
+
+}
+
+void movePenDown() {
+
+}
+
 /*****************************************
  *             MAIN FUNCTION             *
  *****************************************/
@@ -267,20 +355,22 @@ void setup(void)
   Serial.println("-> Starting GhostWriter");
 
   // Setup i2c communication
+  data.i2cRecieved = false;
   Wire.begin(I2C_ADDRESS);
   Wire.onReceive(i2c_handler);
 
   /*
    * SETUP MOTOR DIRECTION AND STEP PINS AS OUTPUTS
    */
-  pinMode(PIN_MOTOR1_STEP, OUTPUT);
-  pinMode(PIN_MOTOR1_DIR,  OUTPUT);
-  pinMode(PIN_MOTOR2_STEP, OUTPUT);
-  pinMode(PIN_MOTOR2_DIR,  OUTPUT);
-  pinMode(PIN_MOTOR3_STEP, OUTPUT);
-  pinMode(PIN_MOTOR3_DIR,  OUTPUT);
-  pinMode(PIN_MOTOR4_STEP, OUTPUT);
-  pinMode(PIN_MOTOR4_DIR,  OUTPUT);
+  stepper_1.setMaxSpeed(MAXSPEED);
+  stepper_1.setSpeed(SPEED);  
+  stepper_2.setMaxSpeed(MAXSPEED);
+  stepper_2.setSpeed(SPEED);
+  stepper_3.setMaxSpeed(MAXSPEED);
+  stepper_3.setSpeed(SPEED);
+  stepper_4.setMaxSpeed(MAXSPEED);
+  stepper_4.setSpeed(SPEED);
+  
   pinMode(PIN_SERVO,       OUTPUT);
 
 }
@@ -295,5 +385,4 @@ void loop(void)
   data.stateTransition = (data.desiredState != data.presentState);
 
   setCurrentState();
-
 }
