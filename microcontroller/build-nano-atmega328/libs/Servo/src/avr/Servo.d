@@ -1,4 +1,5 @@
-build-nano-atmega328/test.o: test.ino \
+build-nano-atmega328/libs/Servo/src/avr/Servo.o: \
+ /Applications/Arduino.app/Contents/Java/libraries/Servo/src/avr/Servo.cpp \
  /Applications/Arduino.app/Contents/Java/hardware/arduino/avr/cores/arduino/Arduino.h \
  /Applications/Arduino.app/Contents/Java/hardware/arduino/avr/cores/arduino/binary.h \
  /Applications/Arduino.app/Contents/Java/hardware/arduino/avr/cores/arduino/WCharacter.h \
@@ -11,4 +12,5 @@ build-nano-atmega328/test.o: test.ino \
  /Applications/Arduino.app/Contents/Java/hardware/arduino/avr/cores/arduino/Arduino.h \
  /Applications/Arduino.app/Contents/Java/hardware/arduino/avr/variants/eightanaloginputs/pins_arduino.h \
  /Applications/Arduino.app/Contents/Java/hardware/arduino/avr/variants/eightanaloginputs/../standard/pins_arduino.h \
- libraries/AccelStepper/AccelStepper.h
+ /Applications/Arduino.app/Contents/Java/libraries/Servo/src/Servo.h \
+ /Applications/Arduino.app/Contents/Java/libraries/Servo/src/avr/ServoTimers.h
