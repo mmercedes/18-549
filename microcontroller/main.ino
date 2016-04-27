@@ -71,6 +71,7 @@ typedef struct
   bool stateTransition;
   bool i2cReceived;
   bool inCommand;
+  bool stepsLeft;
   int nextCommand;
 } data_S;
 
@@ -119,10 +120,12 @@ AccelStepper stepper_2(1,PIN_MOTOR2_STEP, PIN_MOTOR2_DIR);
 AccelStepper stepper_3(1,PIN_MOTOR3_STEP, PIN_MOTOR3_DIR);
 AccelStepper stepper_4(1,PIN_MOTOR4_STEP, PIN_MOTOR4_DIR);
 
-int desiredpos_1;
-int desiredpos_2;
-int desiredpos_3;
-int desiredpos_4;
+long desiredpos_1;
+long desiredpos_2;
+long desiredpos_3;
+long desiredpos_4;
+
+Servo penServo;
 
 /*****************************************
  *          HELPER FUNCTIONS             *
@@ -297,17 +300,42 @@ void setCurrentState(void)
         {
             data.presentState = STATE_CALIBRATE;
             Serial.println("CALIBRATE");
+            desiredpos_1 = stepper_1.currentPosition() + CALIBRATE_STEPS;
+            desiredpos_2 = stepper_2.currentPosition() + CALIBRATE_STEPS;
+            desiredpos_3 = stepper_3.currentPosition() + CALIBRATE_STEPS;
+            desiredpos_4 = stepper_4.currentPosition() + CALIBRATE_STEPS;
+            
         }
-        data.inCommand = false;
+        data.stepsLeft = data.stepsLeft || moveMotor1(desiredpos_1);
+        data.stepsLeft = data.stepsLeft || moveMotor2(desiredpos_2);
+        data.stepsLeft = data.stepsLeft || moveMotor3(desiredpos_3);
+        data.stepsLeft = data.stepsLeft || moveMotor4(desiredpos_4);        
+        data.inCommand = data.stepsLeft;
+        if(!data.stepsLeft){
+            stepper_1.setCurrentPosition(START_POS);
+            stepper_2.setCurrentPosition(START_POS);
+            stepper_3.setCurrentPosition(START_POS);
+            stepper_4.setCurrentPosition(START_POS);            
+        }
         break;
 
       case STATE_DRAWING:
         if(data.stateTransition)
         {
             data.presentState = STATE_DRAWING;
-            Serial.println("DRAW");
+            if(data.nextCommand == DRAW) {
+                Serial.println("DRAW");
+            }
         }
-        data.inCommand = false;
+        if(data.nextCommand == PEN_UP) {
+            movePenUp();
+            data.inCommand = false;
+        } else if(data.nextCommand == PEN_DOWN) {
+            movePenDown();
+            data.inCommand = false;
+        } else {
+            
+        }
         break;
 
       default:
@@ -323,48 +351,46 @@ boolean moveMotor1(int x) {
     if (stepper_1.distanceToGo() == 0)
       { 
           stepper_1.moveTo(x % STEPS);
-          stepper_1.setMaxSpeed(MAXSPEED);
-          stepper_1.setAcceleration(ACCEL);
+          stepper_1.setSpeed(MAXSPEED);
       }
-    return stepper_1.run();
+    return stepper_1.runSpeed();
 }
 
 boolean moveMotor2(int x) {
     if (stepper_2.distanceToGo() == 0)
       { 
           stepper_2.moveTo(x % STEPS);
-          stepper_2.setMaxSpeed(MAXSPEED);
-          stepper_2.setAcceleration(ACCEL);
+          stepper_2.setSpeed(MAXSPEED);
       }
-    return stepper_2.run();
+    return stepper_2.runSpeed();
 }
 
 boolean moveMotor3(int x) {
     if (stepper_3.distanceToGo() == 0)
       { 
           stepper_3.moveTo(x % STEPS);
-          stepper_3.setMaxSpeed(MAXSPEED);
-          stepper_3.setAcceleration(ACCEL);
+          stepper_3.setSpeed(MAXSPEED);
       }
-    return stepper_3.run();
+    return stepper_3.runSpeed();
 }
 
 boolean moveMotor4(int x) {
     if (stepper_4.distanceToGo() == 0)
       { 
           stepper_4.moveTo(x % STEPS);
-          stepper_4.setMaxSpeed(MAXSPEED);
-          stepper_4.setAcceleration(ACCEL);
+          stepper_4.setSpeed(MAXSPEED);
       }
-    return stepper_4.run();
+    return stepper_4.runSpeed();
 }
 
 void movePenUp() {
     Serial.println("PEN UP");
+    penServo.write(0);
 }
 
 void movePenDown() {
     Serial.println("PEN DOWN");
+    penServo.write(180);
 }
 
 /*****************************************
@@ -396,11 +422,12 @@ void setup(void)
   stepper_4.setCurrentPosition(START_POS);
   stepper_4.setSpeed(SPEED);
   
-  pinMode(PIN_SERVO,       OUTPUT);
+  penServo.attach(PIN_SERVO);
 
   data.nextCommand = STOP;
   data.presentState = STATE_WAIT;
   data.desiredState = STATE_WAIT;
+  data.stepsLeft = false;
 }
 
 void loop(void)
