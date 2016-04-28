@@ -69,10 +69,14 @@ typedef struct
   states_E desiredState;
   states_E presentState;
   bool stateTransition;
+
   bool i2cReceived;
   bool inCommand;
   bool stepsLeft;
   int nextCommand;
+
+  char serialByte;
+  bool newSerialByte;
 } data_S;
 
 /*****************************************
@@ -175,38 +179,122 @@ void i2c_req_handler()
 inline bool allowTransitionCalibrateToDrawing(void)
 {
     int c = data.nextCommand;
+    bool allowTransition = false;
     bool draw = (c == DRAW) || (c == PEN_UP) || (c == PEN_DOWN);
-    return !data.inCommand && draw;     
+
+    if(!data.inCommand && draw)
+    {
+      allowTransition = true;
+    }
+
+    return allowTransition;  
 }
 
 /**
-  * Check for transition from drawing to calibration
+  * Check for transition from drawing to calibration.
+  * Allow transition from drawing to calibrate if
+  *
   */
 inline bool allowTransitionDrawingToCalibrate(void)
 {
-  return !data.inCommand && data.nextCommand == CALIBRATE;
+  bool allowTransition = false;
+
+  // i2c case
+  if(!data.inCommand && data.nextCommand == CALIBRATE)
+  {
+    allowTransition = true;
+  }
+
+  // serial case
+  if(data.newSerialByte == true && (data.serialByte == 'c'))
+  {
+    allowTransition = true;
+  }
+
+  return allowTransition;
 }
 
+/**
+  * Check for transition from wait to calibration.
+  * Allow transition from wait to calibrate if
+  *
+  */
 inline bool allowTransitionWaitToCalibrate(void)
 {
-  return !data.inCommand && data.nextCommand == CALIBRATE;
+  bool allowTransition = false;
+
+  if(!data.inCommand && data.nextCommand == CALIBRATE)
+  {
+    allowTransition = true;
+  }
+
+  // serial case
+  if(data.newSerialByte == true && (data.serialByte == 'c'))
+  {
+    allowTransition = true;
+  }
+
+  return allowTransition;
 }
 
+/**
+  * Check for transition from wait to drawing.
+  * Allow transition from wait to drawing if
+  *
+  */
 inline bool allowTransitionWaitToDrawing(void)
 {
     int c = data.nextCommand;
+    bool allowTransition = false;
+
     bool draw = (c == DRAW) || (c == PEN_UP) || (c == PEN_DOWN);
-    return !data.inCommand && draw; 
+
+    if(!data.inCommand && draw)
+    {
+      allowTransition = true;
+    }
+
+    return allowTransition; 
 }
 
+/**
+  * Check for transition from drawing to wait.
+  * Allow transition from drawing to wait if
+  *
+  */
 inline bool allowTransitionDrawingToWait(void)
 {
-    return !data.inCommand;
+  bool allowTransition = false;
+
+  if(!data.inCommand)
+  {
+    allowTransition = true;
+  }
+
+  return allowTransition;
 }
 
+/**
+  * Check for transition from calibrate to wait.
+  * Allow transition from calibrate to wait if
+  *
+  */
 inline bool allowTransitionCalibrateToWait(void)
 {
-    return !data.inCommand;
+  bool allowTransition = false;
+
+  if(!data.inCommand)
+  {
+    allowTransition = true;
+  }
+
+  // serial case
+  if(data.newSerialByte == true && (data.serialByte == 'w'))
+  {
+    allowTransition = true;
+  }
+
+  return allowTransition;
 }
 
 /*
@@ -214,9 +302,16 @@ inline bool allowTransitionCalibrateToWait(void)
  */
 void processData(void)
 {
-    if(data.i2cReceived) {
+    if(data.i2cReceived) 
+    {
         data.i2cReceived = false;
         data.inCommand = true;
+    }
+
+    if(Serial.avilable() == true)
+    {
+        data.serialByte = Serial.read();
+        data.newSerialByte = true;
     }
 }
 
@@ -296,7 +391,6 @@ void setCurrentState(void)
       case STATE_WAIT:
         if(data.stateTransition)
         {
-            data.presentState = STATE_WAIT;
             Serial.println("WAIT");
         }
         data.inCommand = false;
@@ -305,7 +399,6 @@ void setCurrentState(void)
       case STATE_CALIBRATE:
         if(data.stateTransition)
         {
-            data.presentState = STATE_CALIBRATE;
             Serial.println("CALIBRATE");
             
             new_positions[0] = stepper_1.currentPosition() + CALIBRATE_STEPS;
@@ -331,7 +424,6 @@ void setCurrentState(void)
       case STATE_DRAWING:
         if(data.stateTransition)
         {
-            data.presentState = STATE_DRAWING;
             if(data.nextCommand == DRAW) {
                 Serial.println("DRAW");
             } else if(data.nextCommand == PEN_UP) {
@@ -414,5 +506,7 @@ void loop(void)
   data.stateTransition = (data.desiredState != data.presentState);
 
   setCurrentState();
+  
+  data.newSerialByte = false;
   
 }
