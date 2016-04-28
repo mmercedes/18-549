@@ -49,7 +49,7 @@
 #define CALIBRATE                3
 #define DRAW                     4
 
-#define CALIBRATE_STEPS         30
+#define CALIBRATE_STEPS         10
 
 #define START_POS              500
 
@@ -201,12 +201,12 @@ inline bool allowTransitionWaitToDrawing(void)
 
 inline bool allowTransitionDrawingToWait(void)
 {
-  return data.nextCommand == STOP;
+    return !data.inCommand;
 }
 
 inline bool allowTransitionCalibrateToWait(void)
 {
-  return data.nextCommand == STOP;
+    return !data.inCommand;
 }
 
 /*
@@ -310,8 +310,8 @@ void setCurrentState(void)
             
             new_positions[0] = stepper_1.currentPosition() + CALIBRATE_STEPS;
             new_positions[1] = stepper_2.currentPosition() + CALIBRATE_STEPS;
-            new_positions[2] = stepper_3.currentPosition() + CALIBRATE_STEPS;
-            new_positions[2] = stepper_4.currentPosition() + CALIBRATE_STEPS;            
+            new_positions[2] = stepper_3.currentPosition() - CALIBRATE_STEPS;
+            new_positions[2] = stepper_4.currentPosition() - CALIBRATE_STEPS;            
             steppers.moveTo(new_positions);
         }
         data.stepsLeft = steppers.run();
@@ -354,44 +354,6 @@ void setCurrentState(void)
 
     data.presentState = state;
 }
-
-/*
-boolean moveMotor1(int x) {
-    if (stepper_1.distanceToGo() == 0)
-      { 
-          stepper_1.moveTo(x % STEPS);
-          stepper_1.setSpeed(MAXSPEED);
-      }
-    return stepper_1.run();
-}
-
-boolean moveMotor2(int x) {
-    if (stepper_2.distanceToGo() == 0)
-      { 
-          stepper_2.moveTo(x % STEPS);
-          stepper_2.setSpeed(MAXSPEED);
-      }
-    return stepper_2.run();
-}
-
-boolean moveMotor3(int x) {
-    if (stepper_3.distanceToGo() == 0)
-      { 
-          stepper_3.moveTo(x % STEPS);
-          stepper_3.setSpeed(MAXSPEED);
-      }
-    return stepper_3.run();
-}
-
-boolean moveMotor4(int x) {
-    if (stepper_4.distanceToGo() == 0)
-      { 
-          stepper_4.moveTo(x % STEPS);
-          stepper_4.setSpeed(MAXSPEED);
-      }
-    return stepper_4.run();
-}
-*/
 
 void movePenUp() {
     Serial.println("PEN UP");
