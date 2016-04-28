@@ -18,12 +18,13 @@
 #include <Wire.h>
 #include <Servo.h>
 #include <AccelStepper.h>
+#include <MultiStepper.h>
 
 /*****************************************
  *                 DEFINES               *
  *****************************************/
 
-#define BAUD_RATE           115200
+#define BAUD_RATE             9600
 #define I2C_ADDRESS           0x04
 
 #define PIN_MOTOR1_STEP          3
@@ -38,9 +39,8 @@
 
 #define DELAY                    5
 #define STEPS                 1000
-#define MAXSPEED               500
-#define SPEED                  200
-#define ACCEL                   50
+#define MAXSPEED               100
+#define SPEED                   50
 
 // I2C COMMANDS
 #define STOP                     0
@@ -49,7 +49,7 @@
 #define CALIBRATE                3
 #define DRAW                     4
 
-#define CALIBRATE_STEPS         10
+#define CALIBRATE_STEPS         30
 
 #define START_POS              500
 
@@ -79,7 +79,8 @@ typedef struct
  *             FUNCTION HEADERS          *
  *****************************************/
 
-void i2c_handler(int numBytesReceived);
+void i2c_rec_handler(int numBytesReceived);
+void i2c_req_handler();
 
 void processData(void);
 void getDesiredState(void);
@@ -101,10 +102,12 @@ inline bool allowTransitionWaitToDrawing(void);
 inline bool allowTransitionWaitToCalibrate(void);
 
 // Motor movement functions
+/*
 boolean moveMotor1(int x);
 boolean moveMotor2(int x);
 boolean moveMotor3(int x);
 boolean moveMotor4(int x);
+*/
 
 void movePenUp();
 void movePenDown();
@@ -120,10 +123,9 @@ AccelStepper stepper_2(1,PIN_MOTOR2_STEP, PIN_MOTOR2_DIR);
 AccelStepper stepper_3(1,PIN_MOTOR3_STEP, PIN_MOTOR3_DIR);
 AccelStepper stepper_4(1,PIN_MOTOR4_STEP, PIN_MOTOR4_DIR);
 
-long desiredpos_1;
-long desiredpos_2;
-long desiredpos_3;
-long desiredpos_4;
+MultiStepper steppers();
+
+long new_positions[4];
 
 Servo penServo;
 
@@ -143,19 +145,20 @@ void i2c_rec_handler(int numBytesReceived)
         buf[i] = Wire.read();
         i++;
     }
-    desiredpos_1 = buf[0] * 256 + buf[1];
-    desiredpos_2 = buf[2] * 256 + buf[3];
-    desiredpos_3 = buf[4] * 256 + buf[5];
-    desiredpos_4 = buf[6] * 256 + buf[7];
+    new_positions[0] = buf[0] * 256 + buf[1];
+    new_positions[1] = buf[2] * 256 + buf[3];
+    new_positions[2] = buf[4] * 256 + buf[5];
+    new_positions[3] = buf[6] * 256 + buf[7];
     data.nextCommand = buf[8];
+    Serial.println(" ");
     Serial.print("I2C received : ");
-    Serial.print(desiredpos_1);
+    Serial.print(new_positions[0]);
     Serial.print("\t");    
-    Serial.print(desiredpos_2);
+    Serial.print(new_positions[1]);
     Serial.print("\t");
-    Serial.print(desiredpos_3);
+    Serial.print(new_positions[2]);
     Serial.print("\t");
-    Serial.print(desiredpos_4);
+    Serial.print(new_positions[3]);
     Serial.print("\t");
     Serial.print(buf[8]);
     data.i2cReceived = true;
@@ -171,7 +174,9 @@ void i2c_req_handler()
   */
 inline bool allowTransitionCalibrateToDrawing(void)
 {
-  return !data.inCommand && data.nextCommand == DRAW;
+    int c = data.nextCommand;
+    bool draw = (c == DRAW) || (c == PEN_UP) || (c == PEN_DOWN);
+    return !data.inCommand && draw;     
 }
 
 /**
@@ -189,7 +194,9 @@ inline bool allowTransitionWaitToCalibrate(void)
 
 inline bool allowTransitionWaitToDrawing(void)
 {
-    return !data.inCommand && data.nextCommand == DRAW; 
+    int c = data.nextCommand;
+    bool draw = (c == DRAW) || (c == PEN_UP) || (c == PEN_DOWN);
+    return !data.inCommand && draw; 
 }
 
 inline bool allowTransitionDrawingToWait(void)
@@ -209,7 +216,7 @@ void processData(void)
 {
     if(data.i2cReceived) {
         data.i2cReceived = false;
-        data.inCommand = true;        
+        data.inCommand = true;
     }
 }
 
@@ -300,22 +307,24 @@ void setCurrentState(void)
         {
             data.presentState = STATE_CALIBRATE;
             Serial.println("CALIBRATE");
-            desiredpos_1 = stepper_1.currentPosition() + CALIBRATE_STEPS;
-            desiredpos_2 = stepper_2.currentPosition() + CALIBRATE_STEPS;
-            desiredpos_3 = stepper_3.currentPosition() + CALIBRATE_STEPS;
-            desiredpos_4 = stepper_4.currentPosition() + CALIBRATE_STEPS;
             
+            new_positions[0] = stepper_1.currentPosition() + CALIBRATE_STEPS;
+            new_positions[1] = stepper_2.currentPosition() + CALIBRATE_STEPS;
+            new_positions[2] = stepper_3.currentPosition() + CALIBRATE_STEPS;
+            new_positions[2] = stepper_4.currentPosition() + CALIBRATE_STEPS;            
+            steppers.moveTo(new_positions);
         }
-        data.stepsLeft = data.stepsLeft || moveMotor1(desiredpos_1);
-        data.stepsLeft = data.stepsLeft || moveMotor2(desiredpos_2);
-        data.stepsLeft = data.stepsLeft || moveMotor3(desiredpos_3);
-        data.stepsLeft = data.stepsLeft || moveMotor4(desiredpos_4);        
+        data.stepsLeft = steppers.run();
         data.inCommand = data.stepsLeft;
+        
         if(!data.stepsLeft){
             stepper_1.setCurrentPosition(START_POS);
             stepper_2.setCurrentPosition(START_POS);
             stepper_3.setCurrentPosition(START_POS);
-            stepper_4.setCurrentPosition(START_POS);            
+            stepper_4.setCurrentPosition(START_POS);
+            Serial.println("CALIBRATED");
+        } else {
+            Serial.println("STEP");
         }
         break;
 
@@ -325,15 +334,15 @@ void setCurrentState(void)
             data.presentState = STATE_DRAWING;
             if(data.nextCommand == DRAW) {
                 Serial.println("DRAW");
+            } else if(data.nextCommand == PEN_UP) {
+                movePenUp();
+                data.inCommand = false;
+            } else if(data.nextCommand == PEN_DOWN) {
+                movePenDown();
+                data.inCommand = false;
             }
         }
-        if(data.nextCommand == PEN_UP) {
-            movePenUp();
-            data.inCommand = false;
-        } else if(data.nextCommand == PEN_DOWN) {
-            movePenDown();
-            data.inCommand = false;
-        } else {
+        if(data.nextCommand == DRAW) {
             
         }
         break;
@@ -346,14 +355,14 @@ void setCurrentState(void)
     data.presentState = state;
 }
 
-
+/*
 boolean moveMotor1(int x) {
     if (stepper_1.distanceToGo() == 0)
       { 
           stepper_1.moveTo(x % STEPS);
           stepper_1.setSpeed(MAXSPEED);
       }
-    return stepper_1.runSpeed();
+    return stepper_1.run();
 }
 
 boolean moveMotor2(int x) {
@@ -362,7 +371,7 @@ boolean moveMotor2(int x) {
           stepper_2.moveTo(x % STEPS);
           stepper_2.setSpeed(MAXSPEED);
       }
-    return stepper_2.runSpeed();
+    return stepper_2.run();
 }
 
 boolean moveMotor3(int x) {
@@ -371,7 +380,7 @@ boolean moveMotor3(int x) {
           stepper_3.moveTo(x % STEPS);
           stepper_3.setSpeed(MAXSPEED);
       }
-    return stepper_3.runSpeed();
+    return stepper_3.run();
 }
 
 boolean moveMotor4(int x) {
@@ -380,8 +389,9 @@ boolean moveMotor4(int x) {
           stepper_4.moveTo(x % STEPS);
           stepper_4.setSpeed(MAXSPEED);
       }
-    return stepper_4.runSpeed();
+    return stepper_4.run();
 }
+*/
 
 void movePenUp() {
     Serial.println("PEN UP");
@@ -410,17 +420,15 @@ void setup(void)
   /*
    * SETUP MOTOR DIRECTION AND STEP PINS AS OUTPUTS
    */
-  stepper_1.setCurrentPosition(START_POS);
-  stepper_1.setSpeed(SPEED);  
+  stepper_1.setMaxSpeed(MAXSPEED);
+  stepper_2.setMaxSpeed(MAXSPEED);
+  stepper_3.setMaxSpeed(MAXSPEED);
+  stepper_4.setMaxSpeed(MAXSPEED);  
   
-  stepper_2.setCurrentPosition(START_POS);    
-  stepper_2.setSpeed(SPEED);
-
-  stepper_3.setCurrentPosition(START_POS);    
-  stepper_3.setSpeed(SPEED);
-
-  stepper_4.setCurrentPosition(START_POS);
-  stepper_4.setSpeed(SPEED);
+  steppers.addStepper(stepper_1);
+  steppers.addStepper(stepper_2);
+  steppers.addStepper(stepper_3);
+  steppers.addStepper(stepper_4);  
   
   penServo.attach(PIN_SERVO);
 
@@ -439,4 +447,5 @@ void loop(void)
   data.stateTransition = (data.desiredState != data.presentState);
 
   setCurrentState();
+  
 }
