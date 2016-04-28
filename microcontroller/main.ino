@@ -72,7 +72,6 @@ typedef struct
 
   bool i2cReceived;
   bool inCommand;
-  bool stepsLeft;
   int nextCommand;
 
   char serialByte;
@@ -407,10 +406,9 @@ void setCurrentState(void)
             new_positions[2] = stepper_4.currentPosition() - CALIBRATE_STEPS;            
             steppers.moveTo(new_positions);
         }
-        data.stepsLeft = steppers.run();
-        data.inCommand = data.stepsLeft;
+        data.inCommand = steppers.run();
         
-        if(!data.stepsLeft){
+        if(!data.inCommand){
             stepper_1.setCurrentPosition(START_POS);
             stepper_2.setCurrentPosition(START_POS);
             stepper_3.setCurrentPosition(START_POS);
@@ -426,6 +424,7 @@ void setCurrentState(void)
         {
             if(data.nextCommand == DRAW) {
                 Serial.println("DRAW");
+                steppers.moveTo(new_positions);
             } else if(data.nextCommand == PEN_UP) {
                 movePenUp();
                 data.inCommand = false;
@@ -435,7 +434,7 @@ void setCurrentState(void)
             }
         }
         if(data.nextCommand == DRAW) {
-            
+            data.inCommand = steppers.run(); 
         }
         break;
 
@@ -494,7 +493,6 @@ void setup(void)
   data.nextCommand = STOP;
   data.presentState = STATE_WAIT;
   data.desiredState = STATE_WAIT;
-  data.stepsLeft = false;
 }
 
 void loop(void)
