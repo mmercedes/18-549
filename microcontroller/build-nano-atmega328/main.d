@@ -15,4 +15,5 @@ build-nano-atmega328/main.o: main.ino \
  /Applications/Arduino.app/Contents/Java/hardware/arduino/avr/cores/arduino/Stream.h \
  /Applications/Arduino.app/Contents/Java/libraries/Servo/src/Servo.h \
  /Applications/Arduino.app/Contents/Java/libraries/Servo/src/avr/ServoTimers.h \
- libraries/AccelStepper/AccelStepper.h
+ libraries/AccelStepper/AccelStepper.h \
+ libraries/AccelStepper/MultiStepper.h

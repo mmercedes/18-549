@@ -123,7 +123,7 @@ AccelStepper stepper_2(1,PIN_MOTOR2_STEP, PIN_MOTOR2_DIR);
 AccelStepper stepper_3(1,PIN_MOTOR3_STEP, PIN_MOTOR3_DIR);
 AccelStepper stepper_4(1,PIN_MOTOR4_STEP, PIN_MOTOR4_DIR);
 
-MultiStepper steppers();
+MultiStepper steppers;
 
 long new_positions[4];
 
@@ -420,6 +420,11 @@ void setup(void)
   /*
    * SETUP MOTOR DIRECTION AND STEP PINS AS OUTPUTS
    */
+  stepper_1.setCurrentPosition(START_POS);
+  stepper_2.setCurrentPosition(START_POS);
+  stepper_3.setCurrentPosition(START_POS);
+  stepper_4.setCurrentPosition(START_POS);
+  
   stepper_1.setMaxSpeed(MAXSPEED);
   stepper_2.setMaxSpeed(MAXSPEED);
   stepper_3.setMaxSpeed(MAXSPEED);
