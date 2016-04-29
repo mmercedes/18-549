@@ -38,7 +38,6 @@
 #define PIN_SERVO                7
 
 #define DELAY                    5
-#define STEPS                 1000
 #define MAXSPEED                50
 #define SPEED                   50
 
@@ -169,7 +168,8 @@ void i2c_rec_handler(int numBytesReceived)
 
 void i2c_req_handler()
 {
-    Wire.write(data.inCommand);
+    int msg = (data.inCommand) ? 1 : 2;
+    Wire.write(msg);
 }
 
 /**
@@ -402,6 +402,7 @@ void setCurrentState(void)
             stepper_2.setCurrentPosition(START_POS);
             stepper_3.setCurrentPosition(START_POS);
             stepper_4.setCurrentPosition(START_POS);
+            Serial.println("CALIBRATED");
         } else {
             Serial.println("STEP");
         }
@@ -410,6 +411,7 @@ void setCurrentState(void)
       case STATE_DRAWING:
         if(data.stateTransition)
         {
+            Serial.println("DRAW STATE");
         }
         if(data.i2cReceived){
             if(data.nextCommand == DRAW) {
@@ -431,6 +433,7 @@ void setCurrentState(void)
 
       default:
         // should never reach here, error
+          Serial.println("ERROR, IN DEFAULT");
         break;
     }
 
