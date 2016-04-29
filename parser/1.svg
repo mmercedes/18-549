@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+
+
+<!-- Page 1 -->
+<svg x="0" y="0" width="935" height="1210" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+style="display: block;margin-left: auto;margin-right: auto;">
+<defs>
+
+<style type="text/css"><![CDATA[
+
+.g1_1{
+fill: #FFFFFF;
+}
+
+
+]]></style>
+
+</defs>
+<path d="M0,0
+L0,1210
+L935,1210
+L935,0 Z " 
+fill="#FFFFFF" stroke="none" />
+<path d="M0,0L935,0l0,1210L0,1210L0,0Z" class="g1_1" />
+<path d="M0,0L935,0l0,1210L0,1210L0,0Z" class="g1_1" />
+<path d="M0,0L935,0l0,1210L0,1210L0,0Z" class="g1_1" />
+<path d="M0,110l935,0l0,1100L0,1210L0,110Z" class="g1_1" />
+<image x="112" y="112" width="507" height="192" xlink:href="1/img/1.png" />
+
+<title>Untitleddocument__2_ Page1</title>
+</svg>
