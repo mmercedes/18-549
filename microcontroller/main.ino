@@ -441,8 +441,11 @@ void setCurrentState(void)
           Serial.println("ERROR, IN DEFAULT");
         break;
     }
-
+    if(!data.inCommand){
+        data.nextCommand = STOP;
+    }
     data.presentState = state;
+    data.i2cReceived = false;
 }
 
 void movePenUp() {
