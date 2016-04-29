@@ -39,7 +39,7 @@
 
 #define DELAY                    5
 #define STEPS                 1000
-#define MAXSPEED               100
+#define MAXSPEED                50
 #define SPEED                   50
 
 // I2C COMMANDS
@@ -163,7 +163,7 @@ void i2c_rec_handler(int numBytesReceived)
     Serial.print("\t");
     Serial.print(new_positions[3]);
     Serial.print("\t");
-    Serial.print(buf[8]);
+    Serial.println(buf[8]);
     data.i2cReceived = true;
 }
 
@@ -293,7 +293,6 @@ void processData(void)
 {
     if(data.i2cReceived) 
     {
-        data.i2cReceived = false;
         data.inCommand = true;
     }
 
@@ -390,10 +389,10 @@ void setCurrentState(void)
         {
             Serial.println("CALIBRATE");
             
-            new_positions[0] = stepper_1.currentPosition() + CALIBRATE_STEPS;
+            new_positions[0] = stepper_1.currentPosition() - CALIBRATE_STEPS;
             new_positions[1] = stepper_2.currentPosition() + CALIBRATE_STEPS;
-            new_positions[2] = stepper_3.currentPosition() - CALIBRATE_STEPS;
-            new_positions[2] = stepper_4.currentPosition() - CALIBRATE_STEPS;            
+            new_positions[2] = stepper_3.currentPosition() + CALIBRATE_STEPS;
+            new_positions[3] = stepper_4.currentPosition() - CALIBRATE_STEPS;            
             steppers.moveTo(new_positions);
         }
         data.inCommand = steppers.run();
@@ -403,7 +402,6 @@ void setCurrentState(void)
             stepper_2.setCurrentPosition(START_POS);
             stepper_3.setCurrentPosition(START_POS);
             stepper_4.setCurrentPosition(START_POS);
-            Serial.println("CALIBRATED");
         } else {
             Serial.println("STEP");
         }
@@ -412,6 +410,8 @@ void setCurrentState(void)
       case STATE_DRAWING:
         if(data.stateTransition)
         {
+        }
+        if(data.i2cReceived){
             if(data.nextCommand == DRAW) {
                 Serial.println("DRAW");
                 steppers.moveTo(new_positions);
@@ -422,9 +422,10 @@ void setCurrentState(void)
                 movePenDown();
                 data.inCommand = false;
             }
+            data.i2cReceived = false;
         }
         if(data.nextCommand == DRAW) {
-            data.inCommand = steppers.run(); 
+            data.inCommand = steppers.run();
         }
         break;
 
@@ -438,12 +439,12 @@ void setCurrentState(void)
 
 void movePenUp() {
     Serial.println("PEN UP");
-    penServo.write(0);
+    penServo.write(180);
 }
 
 void movePenDown() {
     Serial.println("PEN DOWN");
-    penServo.write(180);
+    penServo.write(0);
 }
 
 /*****************************************
