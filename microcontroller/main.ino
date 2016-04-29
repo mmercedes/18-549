@@ -263,13 +263,8 @@ inline bool allowTransitionWaitToDrawing(void)
   */
 inline bool allowTransitionDrawingToWait(void)
 {
-  bool allowTransition = false;
-
-  if(!data.inCommand)
-  {
-    allowTransition = true;
-  }
-
+  bool allowTransition = data.nextCommand == STOP;
+  
   return allowTransition;
 }
 
@@ -280,12 +275,7 @@ inline bool allowTransitionDrawingToWait(void)
   */
 inline bool allowTransitionCalibrateToWait(void)
 {
-  bool allowTransition = false;
-
-  if(!data.inCommand)
-  {
-    allowTransition = true;
-  }
+  bool allowTransition = data.nextCommand == STOP;
 
   // serial case
   if(data.newSerialByte == true && (data.serialByte == 'w'))
@@ -307,7 +297,7 @@ void processData(void)
         data.inCommand = true;
     }
 
-    if(Serial.avilable() == true)
+    if(Serial.available() == true)
     {
         data.serialByte = Serial.read();
         data.newSerialByte = true;
