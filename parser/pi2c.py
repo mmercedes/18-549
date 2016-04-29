@@ -1,4 +1,5 @@
-#!/usr/bin/python
+#import smbus
+import time
 import sys
 from xml.dom import minidom
 from svg.path import Path, Line, Arc, CubicBezier, QuadraticBezier, parse_path
@@ -8,14 +9,27 @@ import math
 DRAWING_WIDTH = 1000.0
 DRAWING_HEIGHT = 1000.0
 
-def main():
-    if len(sys.argv) == 0:
-        print("No input files given")
-        return
-    filename = sys.argv[1]
+STOP = 0
+PEN_UP = 1
+PEN_DOWN = 2
+CALIBRATE = 3 
+DRAW = 4
+# for RPI version 1, use "bus = smbus.SMBus(0)"
+
+# bus = smbus.SMBus(1)
+
+# # This is the address we setup in the Arduino Program
+# address = 0x04
+
+#!/usr/bin/python
+
+def parser(filename):
     parsedList = parse(filename)
     x = convertToSteps(parsedList)
-    return [1,2,3]
+    y = x[0]
+    del y[0:6]
+    x[0] = y
+    return x
     #print parsedList
     #drawImage(parsedList)
      
@@ -166,11 +180,61 @@ def calcNewDist(nx,ny):
     nh4 = math.sqrt((nx1**2) + (ny1**2))
     return[nh1,nh2,nh3,nh4]
     
-if __name__ == "__main__":
-    main()
 
-    
-'''
-- How to handle the fill of each path?
-- Should we convert curves to lines or handle directly?
-'''
+# def writeNumber(a1,a2,b1,b2,c1,c2,d1,d2,s):
+#         bus.write_i2c_block_data(address,a1, [a2,b1,b2,c1,c2,d1,d2,s])
+#         # bus.write_byte_data(address, 0, value)
+#         return -1
+
+# def readNumber():
+#         number = bus.read_byte(address)
+#         # number = bus.read_byte_data(address, 1)
+#         return number
+
+def init():
+        var = raw_input("Enter a Command or help: ")
+
+        if (var == "STOP"):
+                writeNumber(0,0,0,0,0,0,0,0,0)
+        elif (var == "PEN UP"):
+                writeNumber(0,0,0,0,0,0,0,0,1)
+        elif (var == "PEN DOWN"):
+                writeNumber(0,0,0,0,0,0,0,0,2)
+        elif (var == "CALIBRATE"):
+                writeNumber(0,0,0,0,0,0,0,0,3)
+        elif (var == "DRAW"):
+                var2 = raw_input("Which File do you want to Draw?")
+                steps = parser(var2)
+                print steps
+                draw(steps)
+
+def draw(steps):
+    try: 
+        for path in steps:
+            for stuff in path:
+                s1 = tb(stuff[0])
+                s2 = tb(stuff[1])
+                s3 = tb(stuff[2])
+                s4 = tb(stuff[3])
+                #writeNumber(s1[0],s1[1],s2[0],s2[1],s3[0],s3[1],s4[0],s4[1],4)
+                print "RPI: Hi Arduino, I sent you "
+                # sleep one second
+        time.sleep(1)
+        while True:
+
+            #number = readNumber()
+            print "Arduino: Hey RPI, I received a digit ", number
+            print
+            #if (number == 0):
+            #    draw()
+    except KeyboardInterrupt:
+        init()
+
+def tb(x):
+    x = int(x)
+    t = [0,0]
+    t[0] = x % 256
+    t[1] = (x / 256)
+    return t
+
+init()
