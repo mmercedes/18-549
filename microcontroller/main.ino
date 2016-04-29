@@ -50,7 +50,7 @@
 
 #define CALIBRATE_STEPS         10
 
-#define START_POS              500
+#define START_POS              707
 
 /*****************************************
  *                 TYPEDEFS              *
@@ -72,7 +72,8 @@ typedef struct
   bool i2cReceived;
   bool inCommand;
   int nextCommand;
-
+  int currentCommand;
+    
   char serialByte;
   bool newSerialByte;
 } data_S;
@@ -168,8 +169,11 @@ void i2c_rec_handler(int numBytesReceived)
 
 void i2c_req_handler()
 {
-    int msg = (data.inCommand) ? 1 : 2;
-    Wire.write(msg);
+    if(data.inCommand) {
+        Wire.write(1);
+    } else {
+        Wire.write(2);
+    }
 }
 
 /**
@@ -263,7 +267,7 @@ inline bool allowTransitionWaitToDrawing(void)
   */
 inline bool allowTransitionDrawingToWait(void)
 {
-  bool allowTransition = data.nextCommand == STOP;
+  bool allowTransition = !data.inCommand || data.nextCommand == STOP;
   
   return allowTransition;
 }
@@ -275,7 +279,7 @@ inline bool allowTransitionDrawingToWait(void)
   */
 inline bool allowTransitionCalibrateToWait(void)
 {
-  bool allowTransition = data.nextCommand == STOP;
+  bool allowTransition = !data.inCommand || data.nextCommand == STOP;
 
   // serial case
   if(data.newSerialByte == true && (data.serialByte == 'w'))
@@ -291,9 +295,10 @@ inline bool allowTransitionCalibrateToWait(void)
  */
 void processData(void)
 {
-    if(data.i2cReceived) 
+    if(data.i2cReceived && !data.inCommand) 
     {
         data.inCommand = true;
+        data.currentCommand = data.nextCommand;
     }
 
     if(Serial.available() == true)
@@ -414,19 +419,19 @@ void setCurrentState(void)
             Serial.println("DRAW STATE");
         }
         if(data.i2cReceived){
-            if(data.nextCommand == DRAW) {
+            if(data.currentCommand == DRAW) {
                 Serial.println("DRAW");
                 steppers.moveTo(new_positions);
-            } else if(data.nextCommand == PEN_UP) {
+            } else if(data.currentCommand == PEN_UP) {
                 movePenUp();
                 data.inCommand = false;
-            } else if(data.nextCommand == PEN_DOWN) {
+            } else if(data.currentCommand == PEN_DOWN) {
                 movePenDown();
                 data.inCommand = false;
             }
             data.i2cReceived = false;
         }
-        if(data.nextCommand == DRAW) {
+        if(data.currentCommand == DRAW) {
             data.inCommand = steppers.run();
         }
         break;
@@ -485,6 +490,7 @@ void setup(void)
   penServo.attach(PIN_SERVO);
 
   data.nextCommand = STOP;
+  data.currentCommand = STOP;
   data.presentState = STATE_WAIT;
   data.desiredState = STATE_WAIT;
 }
