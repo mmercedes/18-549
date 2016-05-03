@@ -37,7 +37,7 @@
 #define PIN_MOTOR4_DIR          A0
 #define PIN_SERVO                7
 
-#define MAXSPEED               300
+#define MAXSPEED               300 
 
 // I2C COMMANDS
 #define STOP                     0
