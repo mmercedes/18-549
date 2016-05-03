@@ -14,10 +14,11 @@ def main():
         return
     filename = sys.argv[1]
     parsedList = parse(filename)
-    x = convertToSteps(parsedList)
-    return [1,2,3]
+    #x = convertToSteps(parsedList)
+    #return [1,2,3]
     #print parsedList
-    #drawImage(parsedList)
+    print parsedList
+    drawImage(parsedList)
      
 
         
