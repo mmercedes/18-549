@@ -104,7 +104,10 @@ def convertToSteps(paths):
         for point in path:
             y = point[1]
             x = point[0]
-            temp.append(calcNewDist(x,y))
+            if (x == -1 & y == -1):
+                temp.append([-1,-1,-1,-1])
+            else:
+                temp.append(calcNewDist(x,y))
         spaths.append(temp)
     return spaths
 
@@ -147,10 +150,12 @@ def getlines(p1x, p1y, p2x, p2y, p3x, p3y, p4x, p4y, x):
     c = 1.00 / x
     z = c
     points = []
+    points.append([-1,-1])
     print z
     while (z < 1):
         points.append(getpoint(p1x, p1y, p2x, p2y, p3x, p3y, p4x, p4y, z))
         z = z + c
+    points.append([-1,-1])
     return points
     #drawcurve(points)
     #flattened = [val for sublist in points for val in sublist]
@@ -225,44 +230,53 @@ def init():
 
 def draw(steps):
     try:
-	print steps 
-        for path in steps:
-            pickup = 0 
-            writeNumber(0,0,0,0,0,0,0,0,PEN_UP)
-            while True:
-                        number = readNumber()
-                        if (number == 2):
-                                print "Arduino: Hey RPI, I received a digit ", number
-                                break
-	    time.sleep(.1) 
-	    for stuff in path:
-                s1 = tb(stuff[0])
-                s2 = tb(stuff[1])
-                s3 = tb(stuff[2])
-                s4 = tb(stuff[3])
-		print s1
-		print s2
-		print s3
-		print s4
-        writeNumber(s2[0],s2[1],s1[0],s1[1],s4[0],s4[1],s3[0],s3[1],4)
-        print "RPI: Hi Arduino, I sent you "
-        time.sleep(.1)
-		while True:
-            number = readNumber()
-            if (number == 2):
-                    print "Arduino: Hey RPI, I received a digit ", number
-                    break
-		time.sleep(.1)
-		if (pickup == 0):
-                   writeNumber(0,0,0,0,0,0,0,0,PEN_DOWN)
-                   pickup = 1
-		   time.sleep(.1)
-            	while True:
-           		number = readNumber()
-            		if (number == 2):
-				print "Arduino: Hey RPI, I received a digit ", number
-                		break
-	init()
+    	print steps 
+            for path in steps:
+                pickup = 0 
+                writeNumber(0,0,0,0,0,0,0,0,PEN_UP)
+                while True:
+                            number = readNumber()
+                            if (number == 2):
+                                    print "Arduino: Hey RPI, I received a digit ", number
+                                    break
+        	    time.sleep(.1) 
+        	    for stuff in path:
+                    if (stuff[0] == -1 & stuff[1] == -1 & stuff[2] == -1 & stuff[3] == -1):
+                        writeNumber(0,0,0,0,0,0,0,0,5)
+                        time.sleep(.1)
+                        while True:
+                            number = readNumber()
+                            if (number == 2):
+                                    print "Arduino: Hey RPI, I received a digit ", number
+                                    break
+                    else:
+                        s1 = tb(stuff[0])
+                        s2 = tb(stuff[1])
+                        s3 = tb(stuff[2])
+                        s4 = tb(stuff[3])
+            		    print s1
+            		    print s2
+            		    print s3
+            		    print s4
+                        writeNumber(s2[0],s2[1],s1[0],s1[1],s4[0],s4[1],s3[0],s3[1],4)
+                        print "RPI: Hi Arduino, I sent you "
+                        time.sleep(.1)
+            		    while True:
+                            number = readNumber()
+                            if (number == 2):
+                                    print "Arduino: Hey RPI, I received a digit ", number
+                                    break
+                		time.sleep(.1)
+                		if (pickup == 0):
+                                   writeNumber(0,0,0,0,0,0,0,0,PEN_DOWN)
+                                   pickup = 1
+                		   time.sleep(.1)
+                            	while True:
+                           		number = readNumber()
+                            		if (number == 2):
+                				print "Arduino: Hey RPI, I received a digit ", number
+                                		break
+    	init()
     except KeyboardInterrupt:
         writeNumber(0,0,0,0,0,0,0,0,0)
         init()
