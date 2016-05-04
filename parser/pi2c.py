@@ -91,7 +91,7 @@ def parseSegment(segment, width, height):
         (c2x, c2y, ex, ey) = (c2.real*scale, c2.imag*scale, end.real*scale, end.imag*scale)
         #data = "CURVE (%f, %f) (%f, %f) " % (sx, sy, c1x, c1y)
         #data += "(%f, %f) (%f, %f)" % (c2x, c2y, ex, ey)
-        data = getlines(sx, sy, c1x, c1y, c2x, c2y, ex, ey, 30)
+        data = getlines(sx, sy, c1x, c1y, c2x, c2y, ex, ey, 20)
         return data
     else:
         return str(type(segment))
@@ -180,9 +180,9 @@ def calcNewDist(nx,ny):
 
 def writeNumber(a1,a2,b1,b2,c1,c2,d1,d2,s):
         try:
-		bus.write_i2c_block_data(address,a1, [a2,b1,b2,c1,c2,d1,d2,s])
+			bus.write_i2c_block_data(address,a1, [a2,b1,b2,c1,c2,d1,d2,s])
         except:
-		print "failed to write"
+			print "failed to write"
 	# bus.write_byte_data(address, 0, value)
         return -1
 
@@ -195,33 +195,33 @@ def init():
         var = raw_input("Enter a Command or help: ")
 
         if (var == "STOP"):
-                writeNumber(0,0,0,0,0,0,0,0,0)
+            writeNumber(0,0,0,0,0,0,0,0,0)
         	init()
-	elif (var == "PEN UP"):
-                writeNumber(0,0,0,0,0,0,0,0,1)
+		elif (var == "PEN UP"):
+            writeNumber(0,0,0,0,0,0,0,0,1)
         	init()
-	elif (var == "PEN DOWN"):
-                writeNumber(0,0,0,0,0,0,0,0,2)
+		elif (var == "PEN DOWN"):
+            writeNumber(0,0,0,0,0,0,0,0,2)
         	init()
-	elif (var == "CALIBRATE"):
-                writeNumber(0,0,0,0,0,0,0,0,3)
+		elif (var == "CALIBRATE"):
+            writeNumber(0,0,0,0,0,0,0,0,3)
         	init()
-	elif (var == "RESET"):
-		writeNumber(0,0,0,0,0,0,0,0,5)
-		init()
-	elif (var == "HELP"):
-		print "The possible commands are:"
-		print "STOP"
-		print "CALIBRATE"
-		print "PEN UP"
-		print "PEN DOWN"
-		print "DRAW"
-		init()
-	elif (var == "DRAW"):
-                var2 = raw_input("Which File do you want to Draw?")
-                steps = parser(var2)
-                print steps
-                draw(steps)
+		elif (var == "RESET"):
+			writeNumber(0,0,0,0,0,0,0,0,5)
+			init()
+		elif (var == "HELP"):
+			print "The possible commands are:"
+			print "STOP"
+			print "CALIBRATE"
+			print "PEN UP"
+			print "PEN DOWN"
+			print "DRAW"
+			init()
+		elif (var == "DRAW"):
+            var2 = raw_input("Which File do you want to Draw?")
+            steps = parser(var2)
+            print steps
+            draw(steps)
 
 def draw(steps):
     try:
@@ -244,14 +244,14 @@ def draw(steps):
 		print s2
 		print s3
 		print s4
-                writeNumber(s2[0],s2[1],s1[0],s1[1],s4[0],s4[1],s3[0],s3[1],4)
-                print "RPI: Hi Arduino, I sent you "
-                time.sleep(.1)
+        writeNumber(s2[0],s2[1],s1[0],s1[1],s4[0],s4[1],s3[0],s3[1],4)
+        print "RPI: Hi Arduino, I sent you "
+        time.sleep(.1)
 		while True:
-                        number = readNumber()
-                        if (number == 2):
-                                print "Arduino: Hey RPI, I received a digit ", number
-                                break
+            number = readNumber()
+            if (number == 2):
+                    print "Arduino: Hey RPI, I received a digit ", number
+                    break
 		time.sleep(.1)
 		if (pickup == 0):
                    writeNumber(0,0,0,0,0,0,0,0,PEN_DOWN)
