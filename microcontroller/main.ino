@@ -259,8 +259,11 @@ inline bool allowTransitionWaitToDrawing(void)
     bool allowTransition = false;
     int command = data.currentCommand;
 
-    if((data.newCommand == true) && ( (data.drawingCurve == true) || 
-    	 ((command == DRAW) || (command == PEN_UP) || (command == PEN_DOWN) || (command == RESET_TOOL)) ))
+    if((data.newCommand == true) && ( (command == DRAW) || (command == PEN_UP) || (command == PEN_DOWN) || (command == RESET_TOOL) ))
+    {
+        allowTransition = true;
+    }
+    else if(data.drawingCurve == true)
     {
         allowTransition = true;
     }
@@ -510,8 +513,6 @@ void setCurrentState(void)
             }
         }
 
-        data.motorsMoving = steppers.run();
-
         // if the motors aren't moving and we're in the drawing curve state,
         // choose a new position to go to on the curve
         if((data.motorsMoving == false) && (data.drawingCurve == true))
@@ -532,6 +533,7 @@ void setCurrentState(void)
         	if(data.curvePathIndex == CURVE_PATH_LEN) // reached the end of the curve path
         	{
         		data.drawingCurve = false;
+                        data.curvePathIndex = 0;
                         Serial.println("Done drawing curve");
                 }
         }
@@ -553,7 +555,7 @@ void setCurrentState(void)
 
 void movePenUp() {
     Serial.println("PEN UP");
-    penServo.write(140);
+    penServo.write(180);
 }
 
 void movePenDown() {
