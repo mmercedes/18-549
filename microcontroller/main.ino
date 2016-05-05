@@ -46,7 +46,7 @@
 #define CALIBRATE                3
 #define DRAW                     4
 #define RESET_TOOL               5
-#define DRAWING_CURVE			 6
+#define DRAWING_CURVE		 6
 
 #define CALIBRATE_STEPS         10
 
@@ -199,26 +199,22 @@ void i2c_rec_handler(int numBytesReceived)
 
     	data.curvePathIndex++;
 
+        Serial.println(data.curvePathIndex);
+
     }
 
-    if(data.currentCommand == DRAWING_CURVE)
+    if(data.currentCommand == DRAWING_CURVE && data.gettingCurveCommands == false)
     {
-    	// drawing curve command starts and ends with (0,0,0,0,5)
-    	// if we receive a curve command and were currently not drawing a curve, then we are now
-    	// if we receive a curve command and we are drawing a curve, end it
-    	if(data.gettingCurveCommands == true)
-    	{
-    		data.gettingCurveCommands = false;
-    		data.drawingCurve = true;
-    		data.curvePathIndex = 0; // must be reset before we use it in the output functino
-    	}
-    	// i
-    	else
-    	{
-    		data.gettingCurveCommands = true;
-    		data.curvePathIndex = 0; // must be reset before we use it in the output functino
-    		data.drawingCurve = false;
-    	}
+        data.gettingCurveCommands = true;
+        data.curvePathIndex = 0; // must be reset before we use it in the output functino
+        data.drawingCurve = false;
+    }
+    
+    if(data.curvePathIndex == CURVE_PATH_LEN + 1)
+    {
+        data.gettingCurveCommands = false;
+        data.curvePathIndex = 0;
+        data.drawingCurve = true;
     }
 }
 
@@ -263,7 +259,7 @@ inline bool allowTransitionWaitToDrawing(void)
     bool allowTransition = false;
     int command = data.currentCommand;
 
-    if((data.newCommand == true) && ( (data.drawingCurve = true) || 
+    if((data.newCommand == true) && ( (data.drawingCurve == true) || 
     	 ((command == DRAW) || (command == PEN_UP) || (command == PEN_DOWN) || (command == RESET_TOOL)) ))
     {
         allowTransition = true;
@@ -518,7 +514,7 @@ void setCurrentState(void)
 
         // if the motors aren't moving and we're in the drawing curve state,
         // choose a new position to go to on the curve
-        if(data.motorsMoving == false && data.drawingCurve == true)
+        if((data.motorsMoving == false) && (data.drawingCurve == true))
         {
         	long stepper_positions[NUM_STEPPERS];
 
@@ -529,15 +525,18 @@ void setCurrentState(void)
         	stepper_positions[2] = data.curvePath[data.curvePathIndex][2];
         	stepper_positions[3] = data.curvePath[data.curvePathIndex][3];
 
-        	steppers.moveTo(stepper_positions);
+         	steppers.moveTo(stepper_positions);
 
         	data.curvePathIndex++;
 
         	if(data.curvePathIndex == CURVE_PATH_LEN) // reached the end of the curve path
         	{
         		data.drawingCurve = false;
-        	}
+                        Serial.println("Done drawing curve");
+                }
         }
+
+        data.motorsMoving = steppers.run();
         
         break;
 
@@ -554,7 +553,7 @@ void setCurrentState(void)
 
 void movePenUp() {
     Serial.println("PEN UP");
-    penServo.write(180);
+    penServo.write(140);
 }
 
 void movePenDown() {
@@ -600,6 +599,7 @@ void setup(void)
   data.currentCommand = STOP;
   data.presentState = STATE_WAIT;
   data.desiredState = STATE_WAIT;
+  data.drawingCurve = false;
 }
 
 void loop(void)
