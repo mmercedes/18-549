@@ -46,10 +46,14 @@
 #define CALIBRATE                3
 #define DRAW                     4
 #define RESET_TOOL               5
+#define DRAWING_CURVE		 6
 
 #define CALIBRATE_STEPS         10
 
 #define START_POS              707
+
+#define CURVE_PATH_LEN		    30
+#define NUM_STEPPERS			 4
 
 /*****************************************
  *                 TYPEDEFS              *
@@ -60,6 +64,7 @@ typedef enum
   STATE_WAIT,
   STATE_CALIBRATE,
   STATE_DRAWING,
+  STATE_SETUP,
 } states_E;
 
 typedef struct
@@ -75,7 +80,14 @@ typedef struct
   char serialByte;
   bool newSerialByte;
 
-    bool newCommand;
+  bool newCommand;
+  bool gettingCurveCommands;
+
+  uint16_t curvePath[CURVE_PATH_LEN + 1][NUM_STEPPERS];
+  uint8_t  curvePathIndex;
+  bool drawingCurve;
+
+
 } data_S;
 
 /*****************************************
@@ -167,14 +179,43 @@ void i2c_rec_handler(int numBytesReceived)
     data.i2cReceived = true;
 
     if(data.currentCommand == RESET_TOOL)
-        {
-            new_positions[0] = START_POS;
-            new_positions[1] = START_POS;
-            new_positions[2] = START_POS;
-            new_positions[3] = START_POS;
-            steppers.moveTo(new_positions);
-            Serial.println("RESET");
-        }
+    {
+        new_positions[0] = START_POS;
+        new_positions[1] = START_POS;
+        new_positions[2] = START_POS;
+        new_positions[3] = START_POS;
+        steppers.moveTo(new_positions);
+        Serial.println("RESET");
+    }
+
+    // put any bytes received during the drawing curve command into the curvePath array
+    // 
+    if(data.gettingCurveCommands == true)
+    {
+    	data.curvePath[data.curvePathIndex][0] = new_positions[0];
+    	data.curvePath[data.curvePathIndex][1] = new_positions[1];
+    	data.curvePath[data.curvePathIndex][2] = new_positions[2];
+    	data.curvePath[data.curvePathIndex][3] = new_positions[3];
+
+    	data.curvePathIndex++;
+
+        Serial.println(data.curvePathIndex);
+
+    }
+
+    if(data.currentCommand == DRAWING_CURVE && data.gettingCurveCommands == false)
+    {
+        data.gettingCurveCommands = true;
+        data.curvePathIndex = 0; // must be reset before we use it in the output functino
+        data.drawingCurve = false;
+    }
+    
+    if(data.curvePathIndex == CURVE_PATH_LEN + 1)
+    {
+        data.gettingCurveCommands = false;
+        data.curvePathIndex = 0;
+        data.drawingCurve = true;
+    }
 }
 
 void i2c_req_handler()
@@ -218,7 +259,11 @@ inline bool allowTransitionWaitToDrawing(void)
     bool allowTransition = false;
     int command = data.currentCommand;
 
-    if((data.newCommand == true) && ((command == DRAW) || (command == PEN_UP) || (command == PEN_DOWN) || (command == RESET_TOOL)))
+    if((data.newCommand == true) && ( (command == DRAW) || (command == PEN_UP) || (command == PEN_DOWN) || (command == RESET_TOOL) ))
+    {
+        allowTransition = true;
+    }
+    else if(data.drawingCurve == true)
     {
         allowTransition = true;
     }
@@ -266,6 +311,41 @@ inline bool allowTransitionCalibrateToWait(void)
   return allowTransition;
 }
 
+/**
+  * Check for transition from wait to setup.
+  * Allow transition from wait to setup if we get a 's' on serial
+  *
+  */
+inline bool allowTransitionWaitToSetup(void)
+{
+	bool allowTransition = false;
+
+	if(data.newSerialByte == true && data.serialByte == 's')
+	{
+		allowTransition = true;
+	}
+
+	return allowTransition;
+}
+
+
+/**
+  * Check for transition from setup to wait.
+  * Allow transition from setup to wait if we get a 'w' on serial
+  *
+  */
+inline bool allowTransitionSetupToWait(void)
+{
+	bool allowTransition = false;
+
+	if(data.newSerialByte == true && data.serialByte == 'w')
+	{
+		allowTransition = true;
+	}
+
+	return allowTransition;
+}
+
 /*
  * Process inputs
  */
@@ -307,12 +387,28 @@ void getDesiredState(void)
       {
         desiredState = STATE_DRAWING;
       }
+      else if(allowTransitionWaitToSetup() == true)
+      {
+      	desiredState = STATE_SETUP;
+      }
       else
       {
         // keep state
       }
 
       break;
+
+    case STATE_SETUP:
+    	if(allowTransitionSetupToWait() == true)
+    	{
+    		desiredState = STATE_WAIT;
+    	}
+    	else
+    	{
+    		// keep state
+    	}
+
+    	break;
 
     case STATE_CALIBRATE:
       if(allowTransitionCalibrateToWait() == true)
@@ -363,6 +459,15 @@ void setCurrentState(void)
 
         break;
 
+      case STATE_SETUP:
+      	if(data.stateTransition)
+      	{
+      		Serial.println("--> SETUP STATE");
+      		Serial.println("Press 1,2,3 or 4 for which motor you want to spin");
+      	}
+
+      	break;
+
       case STATE_CALIBRATE:
         if(data.stateTransition)
         {
@@ -408,6 +513,31 @@ void setCurrentState(void)
             }
         }
 
+        // if the motors aren't moving and we're in the drawing curve state,
+        // choose a new position to go to on the curve
+        if((data.motorsMoving == false) && (data.drawingCurve == true))
+        {
+        	long stepper_positions[NUM_STEPPERS];
+
+        	Serial.println("DRAWING CURVE");
+
+        	stepper_positions[0] = data.curvePath[data.curvePathIndex][0];
+        	stepper_positions[1] = data.curvePath[data.curvePathIndex][1];
+        	stepper_positions[2] = data.curvePath[data.curvePathIndex][2];
+        	stepper_positions[3] = data.curvePath[data.curvePathIndex][3];
+
+         	steppers.moveTo(stepper_positions);
+
+        	data.curvePathIndex++;
+
+        	if(data.curvePathIndex == CURVE_PATH_LEN) // reached the end of the curve path
+        	{
+        		data.drawingCurve = false;
+                        data.curvePathIndex = 0;
+                        Serial.println("Done drawing curve");
+                }
+        }
+
         data.motorsMoving = steppers.run();
         
         break;
@@ -447,6 +577,7 @@ void setup(void)
   Wire.begin(I2C_ADDRESS);
   Wire.onReceive(i2c_rec_handler);
   Wire.onRequest(i2c_req_handler);
+
   /*
    * SETUP MOTOR DIRECTION AND STEP PINS AS OUTPUTS
    */
@@ -470,6 +601,7 @@ void setup(void)
   data.currentCommand = STOP;
   data.presentState = STATE_WAIT;
   data.desiredState = STATE_WAIT;
+  data.drawingCurve = false;
 }
 
 void loop(void)
